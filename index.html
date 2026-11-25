@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>李白的传奇人生 · 诗酒趁年华</title>
+<style>
+  :root {
+    --ink: #1c1a19;
+    --ink-2: #3a3532;
+    --paper: #f3ede1;
+    --paper-2: #e9e0cf;
+    --gold: #b8860b;
+    --red: #9c2b25;
+    --line: rgba(28, 26, 25, .16);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Songti SC", "STSong", "SimSun", "Noto Serif SC", serif;
+    line-height: 1.85;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: "";
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      radial-gradient(circle at 18% 12%, rgba(184,134,11,.07), transparent 42%),
+      radial-gradient(circle at 82% 74%, rgba(156,43,37,.06), transparent 46%),
+      repeating-linear-gradient(0deg, rgba(120,100,70,.035) 0 1px, transparent 1px 4px);
+  }
+  .wrap { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+
+  /* 顶部导航 */
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(243,237,225,.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  nav { max-width: 1080px; margin: 0 auto; padding: 12px 28px; display: flex; align-items: center; gap: 22px; }
+  nav .logo { font-size: 19px; letter-spacing: 5px; font-weight: 700; color: var(--red); }
+  nav .logo small { font-size: 11px; letter-spacing: 1px; color: var(--ink-2); margin-left: 6px; }
+  nav a {
+    color: var(--ink-2); text-decoration: none; font-size: 14px; letter-spacing: 1px;
+    padding: 4px 2px; border-bottom: 2px solid transparent; transition: .2s;
+  }
+  nav a:hover { color: var(--red); border-bottom-color: var(--red); }
+
+  /* 首屏 */
+  .hero { padding: 78px 0 62px; text-align: center; position: relative; }
+  .hero .seal {
+    display: inline-block; padding: 6px 10px; border: 2px solid var(--red);
+    color: var(--red); font-size: 13px; letter-spacing: 3px; transform: rotate(-2deg);
+    margin-bottom: 26px;
+  }
+  .hero h1 {
+    font-size: clamp(46px, 8vw, 88px); letter-spacing: 14px; font-weight: 700;
+    color: var(--ink); text-shadow: 2px 3px 0 rgba(184,134,11,.18);
+  }
+  .hero .sub { margin-top: 16px; font-size: 17px; letter-spacing: 6px; color: var(--ink-2); }
+  .hero .verse {
+    margin: 30px auto 0; max-width: 620px; font-size: 15px; color: var(--ink-2);
+  }
+  .hero .verse em { font-style: normal; color: var(--red); }
+  .scroll-hint { margin-top: 34px; font-size: 12px; color: var(--ink-2); letter-spacing: 2px; animation: bob 2.2s infinite; }
+  @keyframes bob { 0%,100% { transform: translateY(0); opacity: .55; } 50% { transform: translateY(7px); opacity: 1; } }
+
+  /* 通用章节 */
+  section { padding: 54px 0; }
+  .sec-head { display: flex; align-items: baseline; gap: 16px; margin-bottom: 30px; }
+  .sec-head h2 { font-size: 27px; letter-spacing: 4px; font-weight: 700; }
+  .sec-head .en { font-size: 11px; letter-spacing: 3px; color: rgba(28,26,25,.42); font-family: Georgia, serif; }
+  .sec-head .rule { flex: 1; height: 1px; background: var(--line); }
+
+  /* 简介 */
+  .intro-grid { display: grid; grid-template-columns: 1.25fr 1fr; gap: 34px; }
+  .intro-text p { font-size: 15.5px; text-indent: 2em; margin-bottom: 12px; color: var(--ink-2); }
+  .intro-text p strong { color: var(--ink); }
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .fact {
+    background: rgba(255,255,255,.5); border: 1px solid var(--line);
+    border-left: 3px solid var(--gold); padding: 12px 14px;
+  }
+  .fact .k { font-size: 12px; letter-spacing: 2px; color: var(--ink-2); }
+  .fact .v { font-size: 15px; margin-top: 2px; }
+
+  /* 名句赏析 */
+  .poems { display: grid; grid-template-columns: repeat(auto-fit, minmax(305px, 1fr)); gap: 18px; }
+  .poem {
+    background: rgba(255,255,255,.55); border: 1px solid var(--line);
+    padding: 22px 22px 16px; cursor: pointer; transition: .25s; position: relative;
+  }
+  .poem:hover { transform: translateY(-3px); box-shadow: 0 10px 26px rgba(60,45,20,.13); border-color: rgba(184,134,11,.55); }
+  .poem .tag {
+    position: absolute; top: 0; right: 0; font-size: 11px; letter-spacing: 2px;
+    background: rgba(156,43,37,.1); color: var(--red); padding: 3px 9px;
+  }
+  .poem h3 { font-size: 19px; letter-spacing: 2px; margin-bottom: 4px; }
+  .poem .author { font-size: 12px; color: rgba(28,26,25,.5); letter-spacing: 1px; margin-bottom: 12px; }
+  .poem .lines { font-size: 15px; color: var(--ink); line-height: 2; white-space: pre-line; }
+  .poem .analysis {
+    max-height: 0; overflow: hidden; transition: max-height .45s ease;
+    font-size: 13.5px; color: var(--ink-2); border-top: 1px dashed var(--line);
+  }
+  .poem.open .analysis { max-height: 260px; }
+  .poem .analysis p { padding-top: 12px; }
+  .poem .more { font-size: 12px; color: var(--gold); margin-top: 10px; letter-spacing: 1px; }
+
+  /* 行迹图 */
+  .map-card {
+    background: linear-gradient(160deg, #fbf7ee, #efe6d4);
+    border: 1px solid var(--line); padding: 18px 18px 10px;
+  }
+  .map-title { font-size: 13px; letter-spacing: 2px; color: var(--ink-2); margin-bottom: 6px; }
+  svg.route { width: 100%; height: auto; display: block; }
+  .map-note { font-size: 12px; color: rgba(28,26,25,.5); text-align: right; padding-top: 6px; }
+  .map-detail {
+    margin-top: 14px; min-height: 74px; border-top: 1px dashed var(--line);
+    padding-top: 12px; font-size: 14px; color: var(--ink-2);
+  }
+  .map-detail b { color: var(--red); font-size: 15px; letter-spacing: 1px; }
+
+  /* 时间线 */
+  .timeline { position: relative; padding-left: 26px; }
+  .timeline::before {
+    content: ""; position: absolute; left: 7px; top: 6px; bottom: 6px;
+    width: 2px; background: linear-gradient(var(--gold), rgba(184,134,11,.15));
+  }
+  .tl-item { position: relative; padding: 0 0 26px 26px; }
+  .tl-item::before {
+    content: ""; position: absolute; left: -23px; top: 8px; width: 10px; height: 10px;
+    border-radius: 50%; background: var(--paper); border: 2px solid var(--gold);
+    transition: .25s;
+  }
+  .tl-item:hover::before { background: var(--red); border-color: var(--red); transform: scale(1.25); }
+  .tl-year { font-size: 16px; font-weight: 700; color: var(--red); letter-spacing: 1px; font-family: Georgia, serif; }
+  .tl-title { font-size: 15.5px; font-weight: 700; margin: 2px 0 3px; letter-spacing: 1px; }
+  .tl-body { font-size: 13.5px; color: var(--ink-2); }
+  .tl-poem { font-size: 13px; color: var(--gold); font-style: italic; margin-top: 3px; }
+
+  /* 结尾 */
+  footer {
+    margin-top: 40px; padding: 34px 0 46px; border-top: 1px solid var(--line);
+    text-align: center; font-size: 13px; color: rgba(28,26,25,.55); line-height: 2;
+  }
+  footer .quote { font-size: 16px; color: var(--ink); letter-spacing: 2px; margin-bottom: 10px; }
+  @media (max-width: 820px) {
+    .intro-grid { grid-template-columns: 1fr; }
+    nav { flex-wrap: wrap; gap: 12px; }
+    .hero { padding: 46px 0 36px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <div class="logo">李 白 <small>诗 仙</small></div>
+    <a href="#intro">生平简介</a>
+    <a href="#poems">名句赏析</a>
+    <a href="#map">人生轨迹</a>
+    <a href="#timeline">时间线</a>
+  </nav>
+</header>
+
+<div class="wrap">
+
+  <div class="hero">
+    <div class="seal">唐 · 盛 世 诗 魂</div>
+    <h1>李白的传奇人生</h1>
+    <div class="sub">701 — 762 ｜ 字太白 ｜ 号青莲居士</div>
+    <div class="verse">
+      “<em>仰天大笑出门去，我辈岂是蓬蒿人。</em>”<br>
+      他一生仗剑远游，以诗为酒，把盛唐的气象写进了千年的月光里。
+    </div>
+    <div class="scroll-hint">向 下 滚 动 · 走 进 诗 仙 的 世 界 ↓</div>
+  </div>
+
+  <section id="intro">
+    <div class="sec-head"><h2>生平简介</h2><span class="en">BIOGRAPHY</span><div class="rule"></div></div>
+    <div class="intro-grid">
+      <div class="intro-text">
+        <p>李白（701—762），字太白，号青莲居士，又号“谪仙人”，唐代最伟大的浪漫主义诗人，被后世尊为<strong>“诗仙”</strong>。他与杜甫并称“李杜”，是中国古典诗歌史上一座难以逾越的高峰。</p>
+        <p>相传李白出生于西域碎叶（今吉尔吉斯斯坦境内），五岁时随父迁居绵州昌隆（今四川江油）。少年时代便“五岁诵六甲，十岁观百家”，既好剑术，又慕神仙，性格豪放不羁。</p>
+        <p>二十五岁那年，他“仗剑去国，辞亲远游”，沿长江东下，足迹遍及大半个中国。天宝元年（742）奉诏入京，供奉翰林，却因不肯“摧眉折腰事权贵”而遭谗被疏，三年后赐金放还。</p>
+        <p>安史之乱中，他因入永王李璘幕府而获罪流放夜郎，途中遇赦东还。晚年寄居当涂，宝应元年（762）病逝，终年六十二岁。一生留下诗作九百余首，<strong>《蜀道难》《将进酒》《静夜思》</strong>等皆为千古绝唱。</p>
+      </div>
+      <div class="facts">
+        <div class="fact"><div class="k">字 号</div><div class="v">字太白 · 号青莲居士</div></div>
+        <div class="fact"><div class="k">生 卒</div><div class="v">701 年 — 762 年</div></div>
+        <div class="fact"><div class="k">朝 代</div><div class="v">唐（盛唐）</div></div>
+        <div class="fact"><div class="k">称 号</div><div class="v">诗仙 · 谪仙人</div></div>
+        <div class="fact"><div class="k">风 格</div><div class="v">浪漫主义 · 豪放飘逸</div></div>
+        <div class="fact"><div class="k">存 诗</div><div class="v">约 990 首</div></div>
+        <div class="fact" style="grid-column: span 2;"><div class="k">代 表 作</div><div class="v">《将进酒》《蜀道难》《静夜思》《早发白帝城》</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="poems">
+    <div class="sec-head"><h2>名句赏析</h2><span class="en">SELECTED VERSES</span><div class="rule"></div></div>
+    <div class="poems" id="poemBox">
+
+      <div class="poem">
+        <div class="tag">豪 情</div>
+        <h3>将进酒（节选）</h3>
+        <div class="author">唐 · 李白</div>
+        <div class="lines">君不见黄河之水天上来，奔流到海不复回。
+君不见高堂明镜悲白发，朝如青丝暮成雪。
+人生得意须尽欢，莫使金樽空对月。</div>
+        <div class="analysis"><p>开篇以黄河奔涌起兴，把时间的流逝写得惊心动魄。“朝如青丝暮成雪”六字，将一生压缩进一日，悲慨中透出对生命的热烈拥抱。看似劝酒，实为对功名虚妄的清醒反抗。</p></div>
+        <div class="more">点击展开赏析 +</div>
+      </div>
+
+      <div class="poem">
+        <div class="tag">乡 愁</div>
+        <h3>静夜思</h3>
+        <div class="author">唐 · 李白</div>
+        <div class="lines">床前明月光，疑是地上霜。
+举头望明月，低头思故乡。</div>
+        <div class="analysis"><p>二十字白描，无一典故，却成为中国人共同的乡愁记忆。由“疑霜”到“举头”，再到“低头”，动作的起落之间，思乡之情层层沉落，愈淡愈浓。</p></div>
+        <div class="more">点击展开赏析 +</div>
+      </div>
+
+      <div class="poem">
+        <div class="tag">山 川</div>
+        <h3>望庐山瀑布</h3>
+        <div class="author">唐 · 李白</div>
+        <div class="lines">日照香炉生紫烟，遥看瀑布挂前川。
+飞流直下三千尺，疑是银河落九天。</div>
+        <div class="analysis"><p>“生”“挂”“落”三个动词，把静止的瀑布写成了天地的动作。夸张到极处反而显得合理，这正是李白式想象的魅力：以仙人之眼观人间山水。</p></div>
+        <div class="more">点击展开赏析 +</div>
+      </div>
+
+      <div class="poem">
+        <div class="tag">壮 志</div>
+        <h3>行路难（其一·节选）</h3>
+        <div class="author">唐 · 李白</div>
+        <div class="lines">长风破浪会有时，直挂云帆济沧海。</div>
+        <div class="analysis"><p>前文写尽“冰塞川”“雪满山”的困顿，结尾陡然振起。两个“会”“直”字，把失意者的犹疑一扫而空，成为千年来中国人自我激励的精神坐标。</p></div>
+        <div class="more">点击展开赏析 +</div>
+      </div>
+
+      <div class="poem">
+        <div class="tag">友 情</div>
+        <h3>赠汪伦</h3>
+        <div class="author">唐 · 李白</div>
+        <div class="lines">李白乘舟将欲行，忽闻岸上踏歌声。
+桃花潭水深千尺，不及汪伦送我情。</div>
+        <div class="analysis"><p>不写离别之泪，只写踏歌之声；不写情谊之重，只以潭水作比。以景量情、以浅语写深情，是李白绝句最动人的地方。</p></div>
+        <div class="more">点击展开赏析 +</div>
+      </div>
+
+      <div class="poem">
+        <div class="tag">孤 高</div>
+        <h3>月下独酌（节选）</h3>
+        <div class="author">唐 · 李白</div>
+        <div class="lines">花间一壶酒，独酌无相亲。
+举杯邀明月，对影成三人。</div>
+        <div class="analysis"><p>孤独到极处，便与月、影结伴。热闹的想象背后是彻骨的寂寞，而李白偏要把寂寞写成一场盛宴——这正是“诗仙”式的精神胜利。</p></div>
+        <div class="more">点击展开赏析 +</div>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="map">
+    <div class="sec-head"><h2>人生轨迹</h2><span class="en">FOOTPRINTS</span><div class="rule"></div></div>
+    <div class="map-card">
+      <div class="map-title">李白一生行迹示意图 · 点击节点查看经历</div>
+      <svg class="route" viewBox="0 0 900 470" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="grid" width="45" height="45" patternUnits="userSpaceOnUse">
+            <path d="M45 0H0V45" fill="none" stroke="rgba(120,100,70,.13)" stroke-width="1"/>
+          </pattern>
+          <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+            <path d="M0,0 L7,3.2 L0,6.4 Z" fill="#b8860b"/>
+          </marker>
+        </defs>
+        <rect width="900" height="470" fill="url(#grid)"/>
+        <!-- 路线 -->
+        <path d="M96,96 C150,150 168,196 226,222 C290,250 340,262 398,286 C470,316 520,330 596,318 C668,306 712,306 772,318"
+              fill="none" stroke="#b8860b" stroke-width="2.4" stroke-dasharray="9 7" marker-end="url(#arrow)"/>
+        <path d="M226,222 C280,196 316,180 398,168" fill="none" stroke="#b8860b" stroke-width="2" stroke-dasharray="6 6"/>
+        <path d="M398,168 C430,196 440,238 398,286" fill="none" stroke="#9c2b25" stroke-width="2" stroke-dasharray="6 6" opacity=".8"/>
+        <path d="M596,318 C620,372 660,398 706,414" fill="none" stroke="#9c2b25" stroke-width="2" stroke-dasharray="6 6" opacity=".8"/>
+
+        <!-- 节点 -->
+        <g class="node" data-key="suiye" style="cursor:pointer">
+          <circle cx="96" cy="96" r="7" fill="#9c2b25"/>
+          <circle cx="96" cy="96" r="13" fill="none" stroke="#9c2b25" stroke-opacity=".35"/>
+          <text x="96" y="72" text-anchor="middle" font-size="13" fill="#1c1a19">碎叶</text>
+          <text x="96" y="124" text-anchor="middle" font-size="11" fill="#6a6157">701 出生</text>
+        </g>
+        <g class="node" data-key="jiangyou" style="cursor:pointer">
+          <circle cx="226" cy="222" r="7" fill="#9c2b25"/>
+          <circle cx="226" cy="222" r="13" fill="none" stroke="#9c2b25" stroke-opacity=".35"/>
+          <text x="226" y="198" text-anchor="middle" font-size="13" fill="#1c1a19">绵州昌隆</text>
+          <text x="226" y="250" text-anchor="middle" font-size="11" fill="#6a6157">705 少年时代</text>
+        </g>
+        <g class="node" data-key="changan" style="cursor:pointer">
+          <circle cx="398" cy="168" r="7" fill="#b8860b"/>
+          <circle cx="398" cy="168" r="13" fill="none" stroke="#b8860b" stroke-opacity=".45"/>
+          <text x="398" y="144" text-anchor="middle" font-size="13" fill="#1c1a19">长安</text>
+          <text x="398" y="196" text-anchor="middle" font-size="11" fill="#6a6157">742 供奉翰林</text>
+        </g>
+        <g class="node" data-key="luoyang" style="cursor:pointer">
+          <circle cx="520" cy="330" r="6" fill="#b8860b"/>
+          <text x="520" y="356" text-anchor="middle" font-size="13" fill="#1c1a19">洛阳</text>
+          <text x="520" y="374" text-anchor="middle" font-size="11" fill="#6a6157">744 遇杜甫</text>
+        </g>
+        <g class="node" data-key="jinling" style="cursor:pointer">
+          <circle cx="596" cy="318" r="7" fill="#9c2b25"/>
+          <circle cx="596" cy="318" r="13" fill="none" stroke="#9c2b25" stroke-opacity=".35"/>
+          <text x="596" y="294" text-anchor="middle" font-size="13" fill="#1c1a19">金陵</text>
+          <text x="596" y="346" text-anchor="middle" font-size="11" fill="#6a6157">漫游江南</text>
+        </g>
+        <g class="node" data-key="yongwang" style="cursor:pointer">
+          <circle cx="772" cy="318" r="6" fill="#9c2b25"/>
+          <text x="772" y="294" text-anchor="middle" font-size="13" fill="#1c1a19">永王幕府</text>
+          <text x="772" y="346" text-anchor="middle" font-size="11" fill="#6a6157">757 获罪</text>
+        </g>
+        <g class="node" data-key="yegl" style="cursor:pointer">
+          <circle cx="706" cy="414" r="6" fill="#6a6157"/>
+          <text x="706" y="440" text-anchor="middle" font-size="13" fill="#1c1a19">夜郎（流放）</text>
+        </g>
+
+        <text x="880" y="452" text-anchor="end" font-size="11" fill="rgba(28,26,25,.42)">示意图 · 非精确地理比例</text>
+      </svg>
+      <div class="map-detail" id="mapDetail">点击上方任意节点，查看李白在此地的人生片段。</div>
+      <div class="map-note">碎叶 → 江油 → 安陆 → 长安 → 洛阳 → 金陵 → 当涂</div>
+    </div>
+  </section>
+
+  <section id="timeline">
+    <div class="sec-head"><h2>人生时间线</h2><span class="en">TIMELINE</span><div class="rule"></div></div>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-year">701</div>
+        <div class="tl-title">出生于西域碎叶</div>
+        <div class="tl-body">一说生于蜀中，家世与出生地至今仍有争议，这本身也为其人生添上神秘色彩。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-year">705</div>
+        <div class="tl-title">随父迁居绵州昌隆（今四川江油）</div>
+        <div class="tl-body">在此读书学剑，博览百家，少年时期便显露出过人的才华与豪气。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-year">725</div>
+        <div class="tl-title">仗剑去国，辞亲远游</div>
+        <div class="tl-body">出三峡、下江陵，漫游洞庭、金陵、扬州，写下大量山水诗篇。</div>
+        <div class="tl-poem">“仍怜故乡水，万里送行舟。”</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-year">742</div>
+        <div class="tl-title">奉诏入京，供奉翰林</div>
+        <div class="tl-body">因玉真公主与贺知章等人举荐，玄宗召见，“降辇步迎”，一时名动长安。</div>
+        <div class="tl-poem">“仰天大笑出门去，我辈岂是蓬蒿人。”</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-year">744</div>
+        <div class="tl-title">赐金放还，洛阳遇杜甫</div>
+        <div class="tl-body">因遭谗毁离开长安，与杜甫相识同游，二人结下千古传诵的友谊。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-year">755</div>
+        <div class="tl-title">安史之乱爆发</div>
+        <div class="tl-body">战火席卷中原，李白携家避乱，诗风由飘逸转向沉郁，忧国之情渐浓。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-year">757</div>
+        <div class="tl-title">入永王幕府，获罪流放夜郎</div>
+        <div class="tl-body">永王兵败，李白以“附逆”论罪，长流夜郎，人生跌入谷底。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-year">759</div>
+        <div class="tl-title">途中遇赦，东还江陵</div>
+        <div class="tl-body">行至白帝城遇赦，惊喜交加，写下轻快明丽的《早发白帝城》。</div>
+        <div class="tl-poem">“两岸猿声啼不住，轻舟已过万重山。”</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-year">762</div>
+        <div class="tl-title">病逝于当涂</div>
+        <div class="tl-body">晚年依附族叔李阳冰，病逝于当涂，享年六十二岁。临终仍以诗寄怀，留下《临终歌》。</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="quote">“大鹏一日同风起，扶摇直上九万里。”</div>
+    <div>李白的传奇人生 · 交互式网页 ｜ 人工智能通识实验 实验三 任务一</div>
+    <div>页面使用 HTML + CSS + JavaScript 手工构建，含名句赏析交互、行迹节点与时间线</div>
+  </footer>
+
+</div>
+
+<script>
+  // 名句赏析展开 / 收起
+  document.querySelectorAll('.poem').forEach(function (card) {
+    card.addEventListener('click', function () {
+      var open = card.classList.toggle('open');
+      var more = card.querySelector('.more');
+      more.textContent = open ? '收起赏析 −' : '点击展开赏析 +';
+    });
+  });
+
+  // 行迹节点详情
+  var MAP_DATA = {
+    suiye: ['碎叶 · 出生', '约 701 年，李白出生在西域碎叶城（今吉尔吉斯斯坦托克马克附近）。关于他的出生地与家世，历来众说纷纭，这层迷雾反而让"谪仙人"的身世更具传奇色彩。'],
+    jiangyou: ['绵州昌隆 · 少年', '五岁随父迁居绵州昌隆（今四川江油）。"五岁诵六甲，十岁观百家"，他在这里读书、学剑、访道，奠定了豪放飘逸的性格底色。'],
+    changan: ['长安 · 供奉翰林', '天宝元年奉诏入京，玄宗"降辇步迎"，命供奉翰林。然而长安的权贵容不下他的傲骨，三年后便"赐金放还"，离开这座让他既向往又失望的都城。'],
+    luoyang: ['洛阳 · 李杜相逢', '天宝三载，李白与杜甫在洛阳相遇，随后同游梁宋。两位伟大诗人的短暂同行，成为中国文学史上最动人的一次相遇。'],
+    jinling: ['金陵 · 漫游江南', '离开长安后，李白漫游吴越，往来金陵、扬州之间。江南的山水与月色，成为他诗中反复出现的意象。'],
+    yongwang: ['永王幕府 · 获罪', '安史之乱中，李白应永王李璘之邀入幕，写下《永王东巡歌》。永王兵败后，他因此获罪，被判处长流夜郎。'],
+    yegl: ['夜郎 · 流放途中', '流放之路漫长而屈辱。行至白帝城时忽遇大赦，他当即掉头东下，写下"轻舟已过万重山"的千古快意。']
+  };
+  var detail = document.getElementById('mapDetail');
+  document.querySelectorAll('.node').forEach(function (node) {
+    node.addEventListener('click', function () {
+      var d = MAP_DATA[node.getAttribute('data-key')];
+      if (!d) return;
+      detail.innerHTML = '<b>' + d[0] + '</b><br>' + d[1];
+    });
+  });
+</script>
+</body>
+</html>
