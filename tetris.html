@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>俄罗斯方块 · 实验三 任务一</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 30% 20%, #2b3a67, #101528 70%);
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif; color: #e8edf7;
+  }
+  .layout { display: flex; gap: 26px; padding: 24px; }
+  .board-wrap {
+    padding: 10px; border-radius: 14px;
+    background: rgba(255,255,255,.06); box-shadow: 0 12px 40px rgba(0,0,0,.55);
+  }
+  canvas { display: block; border-radius: 8px; background: #0b1020; }
+  .panel { width: 190px; display: flex; flex-direction: column; gap: 14px; }
+  .card {
+    background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+    border-radius: 12px; padding: 12px;
+  }
+  .card h3 { font-size: 13px; font-weight: 600; color: #9fb4d8; letter-spacing: 1px; margin-bottom: 8px; }
+  .score { font-size: 30px; font-weight: 700; color: #ffd166; font-variant-numeric: tabular-nums; }
+  .row { display: flex; justify-content: space-between; font-size: 13px; color: #c7d4ea; margin-top: 6px; }
+  canvas#next { background: transparent; margin: 0 auto; }
+  .keys { font-size: 12px; line-height: 1.9; color: #a9b8d4; }
+  .keys b { display: inline-block; min-width: 64px; color: #e8edf7; }
+  .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  button {
+    padding: 9px 0; border: 0; border-radius: 9px; cursor: pointer;
+    font-size: 13px; font-family: inherit; color: #fff;
+    background: linear-gradient(135deg, #5b8def, #7b5bea); transition: .18s;
+  }
+  button:hover { filter: brightness(1.15); transform: translateY(-1px); }
+  button.ghost { background: rgba(255,255,255,.12); }
+  .tip { font-size: 12px; color: #8fa2c4; text-align: center; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <div class="board-wrap">
+    <canvas id="game" width="300" height="600"></canvas>
+  </div>
+  <div class="panel">
+    <div class="card">
+      <h3>得分</h3>
+      <div class="score" id="score">0</div>
+      <div class="row"><span>等级</span><span id="level">1</span></div>
+      <div class="row"><span>消除行数</span><span id="lines">0</span></div>
+    </div>
+    <div class="card">
+      <h3>下一个</h3>
+      <canvas id="next" width="120" height="90"></canvas>
+    </div>
+    <div class="card">
+      <h3>操作说明</h3>
+      <div class="keys">
+        <div><b>← →</b>左右移动</div>
+        <div><b>↑</b>旋转方块</div>
+        <div><b>↓</b>加速下落</div>
+        <div><b>空格</b>直接落底</div>
+        <div><b>P</b>暂停 / 继续</div>
+      </div>
+    </div>
+    <div class="btns">
+      <button id="btnStart">开始游戏</button>
+      <button id="btnPause" class="ghost">暂停</button>
+    </div>
+    <div class="tip">消除整行即得分，方块堆到顶就结束</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var COLS = 10, ROWS = 20, SIZE = 30;
+  var canvas = document.getElementById('game');
+  var ctx = canvas.getContext('2d');
+  var nextCanvas = document.getElementById('next');
+  var nctx = nextCanvas.getContext('2d');
+  var scoreEl = document.getElementById('score');
+  var levelEl = document.getElementById('level');
+  var linesEl = document.getElementById('lines');
+
+  var SHAPES = {
+    I: { color: '#43d3e8', cells: [[0, 1], [1, 1], [2, 1], [3, 1]] },
+    J: { color: '#5b8def', cells: [[0, 0], [0, 1], [1, 1], [2, 1]] },
+    L: { color: '#f6a23c', cells: [[2, 0], [0, 1], [1, 1], [2, 1]] },
+    O: { color: '#ffd166', cells: [[0, 0], [1, 0], [0, 1], [1, 1]] },
+    S: { color: '#4cd97b', cells: [[1, 0], [2, 0], [0, 1], [1, 1]] },
+    T: { color: '#b06df2', cells: [[1, 0], [0, 1], [1, 1], [2, 1]] },
+    Z: { color: '#f5647c', cells: [[0, 0], [1, 0], [1, 1], [2, 1]] }
+  };
+  var TYPES = Object.keys(SHAPES);
+
+  var board, cur, next, score, lines, level, dropTimer, dropInterval, lastTime, running, paused, over, loopStarted = false;
+
+  function makeBoard() {
+    var b = [];
+    for (var y = 0; y < ROWS; y++) {
+      var row = [];
+      for (var x = 0; x < COLS; x++) row.push(null);
+      b.push(row);
+    }
+    return b;
+  }
+
+  function randomPiece() {
+    var t = TYPES[Math.floor(Math.random() * TYPES.length)];
+    return {
+      type: t,
+      color: SHAPES[t].color,
+      cells: SHAPES[t].cells.map(function (c) { return c.slice(); }),
+      x: 3, y: 0
+    };
+  }
+
+  function rotate(piece) {
+    var rotated = piece.cells.map(function (c) { return [3 - c[1], c[0]]; });
+    var minX = Math.min.apply(null, rotated.map(function (c) { return c[0]; }));
+    var minY = Math.min.apply(null, rotated.map(function (c) { return c[1]; }));
+    var norm = rotated.map(function (c) { return [c[0] - minX, c[1] - minY]; });
+    return { type: piece.type, color: piece.color, cells: norm, x: piece.x, y: piece.y };
+  }
+
+  function collides(piece, ox, oy, cells) {
+    ox = ox || 0; oy = oy || 0; cells = cells || piece.cells;
+    for (var i = 0; i < cells.length; i++) {
+      var x = piece.x + cells[i][0] + ox;
+      var y = piece.y + cells[i][1] + oy;
+      if (x < 0 || x >= COLS || y >= ROWS) return true;
+      if (y >= 0 && board[y][x]) return true;
+    }
+    return false;
+  }
+
+  function merge() {
+    for (var i = 0; i < cur.cells.length; i++) {
+      var x = cur.x + cur.cells[i][0], y = cur.y + cur.cells[i][1];
+      if (y >= 0) board[y][x] = cur.color;
+    }
+  }
+
+  function clearLines() {
+    var cleared = 0;
+    for (var y = ROWS - 1; y >= 0; y--) {
+      var full = true;
+      for (var x = 0; x < COLS; x++) { if (!board[y][x]) { full = false; break; } }
+      if (full) {
+        board.splice(y, 1);
+        board.unshift(new Array(COLS).fill(null));
+        cleared++; y++;
+      }
+    }
+    if (cleared) {
+      lines += cleared;
+      score += [0, 100, 300, 500, 800][cleared] * level;
+      level = 1 + Math.floor(lines / 10);
+      dropInterval = Math.max(90, 800 - (level - 1) * 70);
+      updateStats();
+    }
+  }
+
+  function spawn() {
+    cur = next || randomPiece();
+    next = randomPiece();
+    cur.x = 3; cur.y = 0;
+    drawNext();
+    if (collides(cur)) gameOver();
+  }
+
+  function drop() {
+    if (!collides(cur, 0, 1)) cur.y++;
+    else { merge(); clearLines(); spawn(); }
+    dropTimer = 0;
+  }
+
+  function hardDrop() {
+    while (!collides(cur, 0, 1)) cur.y++;
+    merge(); clearLines(); spawn(); dropTimer = 0;
+  }
+
+  function move(dx) { if (!collides(cur, dx, 0)) cur.x += dx; }
+
+  function turn() {
+    var r = rotate(cur);
+    if (!collides(r, 0, 0, r.cells)) cur = r;
+  }
+
+  function drawCell(g, x, y, color, size) {
+    size = size || SIZE;
+    var px = x * size, py = y * size;
+    g.fillStyle = color;
+    g.fillRect(px + 1, py + 1, size - 2, size - 2);
+    g.fillStyle = 'rgba(255,255,255,.28)';
+    g.fillRect(px + 1, py + 1, size - 2, 4);
+    g.strokeStyle = 'rgba(0,0,0,.35)';
+    g.strokeRect(px + 1.5, py + 1.5, size - 3, size - 3);
+  }
+
+  function drawGrid() {
+    ctx.strokeStyle = 'rgba(255,255,255,.045)';
+    ctx.lineWidth = 1;
+    for (var x = 1; x < COLS; x++) {
+      ctx.beginPath(); ctx.moveTo(x * SIZE, 0); ctx.lineTo(x * SIZE, canvas.height); ctx.stroke();
+    }
+    for (var y = 1; y < ROWS; y++) {
+      ctx.beginPath(); ctx.moveTo(0, y * SIZE); ctx.lineTo(canvas.width, y * SIZE); ctx.stroke();
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#0b1020';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawGrid();
+
+    for (var y = 0; y < ROWS; y++) {
+      for (var x = 0; x < COLS; x++) {
+        if (board[y][x]) drawCell(ctx, x, y, board[y][x]);
+      }
+    }
+
+    if (cur) {
+      var gy = cur.y;
+      while (!collides(cur, 0, gy - cur.y + 1)) gy++;
+      ctx.globalAlpha = 0.22;
+      for (var i = 0; i < cur.cells.length; i++) {
+        if (gy + cur.cells[i][1] >= 0) drawCell(ctx, cur.x + cur.cells[i][0], gy + cur.cells[i][1], cur.color);
+      }
+      ctx.globalAlpha = 1;
+      for (var j = 0; j < cur.cells.length; j++) {
+        if (cur.y + cur.cells[j][1] >= 0) drawCell(ctx, cur.x + cur.cells[j][0], cur.y + cur.cells[j][1], cur.color);
+      }
+    }
+  }
+
+  function drawNext() {
+    nctx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+    if (!next) return;
+    var cell = 22;
+    var xs = next.cells.map(function (c) { return c[0]; });
+    var ys = next.cells.map(function (c) { return c[1]; });
+    var minX = Math.min.apply(null, xs), maxX = Math.max.apply(null, xs);
+    var minY = Math.min.apply(null, ys), maxY = Math.max.apply(null, ys);
+    var ox = (nextCanvas.width - (maxX - minX + 1) * cell) / 2 - minX * cell;
+    var oy = (nextCanvas.height - (maxY - minY + 1) * cell) / 2 - minY * cell;
+    nctx.save();
+    nctx.translate(ox, oy);
+    for (var i = 0; i < next.cells.length; i++) {
+      drawCell(nctx, next.cells[i][0], next.cells[i][1], next.color, cell);
+    }
+    nctx.restore();
+  }
+
+  function updateStats() {
+    scoreEl.textContent = score;
+    levelEl.textContent = level;
+    linesEl.textContent = lines;
+  }
+
+  function loop(t) {
+    if (!running) return;
+    if (!paused && !over) {
+      if (!t) t = performance.now();
+      var dt = t - lastTime;
+      lastTime = t;
+      dropTimer += dt;
+      if (dropTimer > dropInterval) drop();
+      draw();
+    }
+    requestAnimationFrame(loop);
+  }
+
+  function start() {
+    board = makeBoard();
+    score = 0; lines = 0; level = 1;
+    dropInterval = 800; dropTimer = 0; lastTime = performance.now();
+    running = true; paused = false; over = false; next = null;
+    document.getElementById('btnPause').textContent = '暂停';
+    spawn(); updateStats(); draw();
+    if (!loopStarted) { loopStarted = true; requestAnimationFrame(loop); }
+  }
+
+  function gameOver() {
+    over = true; running = false;
+    draw();
+    ctx.fillStyle = 'rgba(8,10,20,.78)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ffd166';
+    ctx.font = 'bold 26px "Microsoft YaHei"';
+    ctx.textAlign = 'center';
+    ctx.fillText('游戏结束', canvas.width / 2, canvas.height / 2 - 14);
+    ctx.fillStyle = '#e8edf7';
+    ctx.font = '16px "Microsoft YaHei"';
+    ctx.fillText('得分 ' + score, canvas.width / 2, canvas.height / 2 + 22);
+  }
+
+  function togglePause() {
+    if (!board || over) return;
+    paused = !paused;
+    document.getElementById('btnPause').textContent = paused ? '继续' : '暂停';
+    if (paused) {
+      ctx.fillStyle = 'rgba(8,10,20,.7)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#e8edf7';
+      ctx.font = 'bold 22px "Microsoft YaHei"';
+      ctx.textAlign = 'center';
+      ctx.fillText('已暂停', canvas.width / 2, canvas.height / 2);
+    } else {
+      lastTime = performance.now();
+      draw();
+    }
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (!running || paused || over) return;
+    switch (e.key) {
+      case 'ArrowLeft': move(-1); draw(); break;
+      case 'ArrowRight': move(1); draw(); break;
+      case 'ArrowDown': if (!collides(cur, 0, 1)) cur.y++; draw(); break;
+      case 'ArrowUp': turn(); draw(); break;
+      case ' ': e.preventDefault(); hardDrop(); draw(); break;
+      case 'p': case 'P': togglePause(); break;
+    }
+  });
+
+  document.getElementById('btnStart').addEventListener('click', start);
+  document.getElementById('btnPause').addEventListener('click', togglePause);
+
+  board = makeBoard();
+  draw();
+  ctx.fillStyle = 'rgba(8,10,20,.72)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#9fb4d8';
+  ctx.font = '18px "Microsoft YaHei"';
+  ctx.textAlign = 'center';
+  ctx.fillText('点击「开始游戏」', canvas.width / 2, canvas.height / 2);
+})();
+</script>
+</body>
+</html>
